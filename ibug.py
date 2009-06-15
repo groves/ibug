@@ -1,5 +1,6 @@
 
 from urlparse import urlparse
+from Queue import Queue
 from cgi import parse_qs
 from urllib import unquote
 import signal, thread, threading, time, sys
@@ -8,11 +9,11 @@ import BaseHTTPServer, SocketServer, mimetypes
 # **************************************************************************************************
 # Globals
 
-global done, server, consoleCommand, phoneResponse
+global done, server, consoleCommand
+phoneResponses = Queue(0)
 
 done = False
 server = None
-phoneResponseEvent = threading.Event()
 consoleEvent = threading.Event()
 
 webPort = 1840
@@ -30,17 +31,17 @@ class WebRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         if path == "/command":
             postConsoleCommand(query.get("message"))
-            response = waitForPhoneResponse()
+            response = phoneResponses.get()
             
             self.respond(200, "application/x-javascript")
             self << response
             
         elif path == "/response":
-            postPhoneResponse(query.get("message"))
+            phoneResponses.put(query.get("message"))
 
         elif path == "/browser":
             self.respond(200, "application/x-javascript")
-            message = waitForPhoneResponse()
+            message = phoneResponses.get()
             self << "command('%s')" % escapeJavaScript(message)
 
         elif path == "/phone":
@@ -137,18 +138,6 @@ def waitForConsoleCommand():
 
     global consoleCommand
     return consoleCommand
-
-def postPhoneResponse(message):
-    global phoneResponse
-    phoneResponse = message
-    phoneResponseEvent.set()
-    
-def waitForPhoneResponse():
-    phoneResponseEvent.wait()
-    phoneResponseEvent.clear()
-
-    global phoneResponse
-    return phoneResponse
 
 # **************************************************************************************************
 
