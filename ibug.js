@@ -2,6 +2,13 @@
 if (!("console" in window) || !("firebug" in console)) {
 (function()
 {
+    function listenForCommands() {
+        var script = document.createElement("script");
+        var url = "http://" + ibugHost + "/phone?" + new Date().getTime();
+        script.setAttribute("src", url);
+        script.setAttribute("type", "text/javascript");
+        document.body.appendChild(script);
+    }
     window.console = 
     {
         firebug: "ibug0.1",
@@ -162,6 +169,7 @@ if (!("console" in window) || !("firebug" in console)) {
                     console.onError(exc.message, exc.sourceId+"", exc.line);
                 }
             }
+            listenForCommands(); // Listen for more commands
         },
     };
  
@@ -176,9 +184,11 @@ if (!("console" in window) || !("firebug" in console)) {
         img.onerror = function() { img.parentNode.removeChild(img); }
 
         var message = escape(message);
-        img.src = "http://" + ibugHost + "/response?message=" + message;
+        img.src = "http://" + ibugHost + "/log?message=" + message;
         document.body.appendChild(img);
     }
+    window.onload = listenForCommands;
+
         
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
                

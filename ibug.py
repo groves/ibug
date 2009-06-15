@@ -3,18 +3,15 @@ from urlparse import urlparse
 from Queue import Queue
 from cgi import parse_qs
 from urllib import unquote
-import signal, thread, threading, time, sys
+import signal, thread, time, sys
 import BaseHTTPServer, SocketServer, mimetypes
 
 # **************************************************************************************************
 # Globals
 
-global done, server, consoleCommand
-phoneResponses = Queue(0)
-
+global done, server
 done = False
 server = None
-consoleEvent = threading.Event()
 
 webPort = 1840
 
@@ -23,36 +20,22 @@ webPort = 1840
 class WebServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     pass
     
+toPhone = Queue(0)
+fromPhone = Queue(0)
+toHandle = {"/command":toPhone, "/log":fromPhone}
+toSend = {"/browser":(fromPhone, ""), "/phone":(toPhone, 'console.')}
 class WebRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
-        #print "%s" % self.path
-
         host, path, params, query = parseURL(self.path)
-        
-        if path == "/command":
-            postConsoleCommand(query.get("message"))
-            response = phoneResponses.get()
-            
-            self.respond(200, "application/x-javascript")
-            self << response
-            
-        elif path == "/response":
-            phoneResponses.put(query.get("message"))
 
-        elif path == "/browser":
-            self.respond(200, "application/x-javascript")
-            message = phoneResponses.get()
-            self << "command('%s')" % escapeJavaScript(message)
+        if path in toHandle:
+            toHandle[path].put(query.get("message"))
 
-        elif path == "/phone":
-            self.respond(200, "text/html")
-            self << getFormattedFile("phone.html")
-            self.wfile.flush()
-
-            while 1:
-                message = waitForConsoleCommand()
-                self << "<script>command('%s')</script>" % escapeJavaScript(message)
-                self.wfile.flush()
+        elif path in toSend:
+            queue, prefix = toSend[path]
+            self.respond(mimeType="application/x-javascript")
+            cmd = "%scommand('%s')" % (prefix, escapeJavaScript(queue.get()))
+            self << cmd
 
         elif path in ["/ibug.js", "/firebug.js"]:
             header = "var ibugHost = '%(hostName)s:%(port)s';" % getHostInfo()
@@ -124,20 +107,6 @@ def runServer():
 def terminate(sig_num, frame):
     global done
     done = True    
-
-# **************************************************************************************************
-
-def postConsoleCommand(message):
-    global consoleCommand
-    consoleCommand = message
-    consoleEvent.set()
-    
-def waitForConsoleCommand():
-    consoleEvent.wait()
-    consoleEvent.clear()
-
-    global consoleCommand
-    return consoleCommand
 
 # **************************************************************************************************
 
