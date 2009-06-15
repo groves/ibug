@@ -46,10 +46,19 @@
         
         window.onload = function init()
         {
-            var iframe = document.createElement("iframe");
-            document.body.appendChild(iframe);
-            iframe.style.display = "none";
-            iframe.src = "/browser";
+            function listenForBrowserEvents() {
+                var req = new XMLHttpRequest();
+                req.open("GET", "/browser");
+                req.onreadystatechange = function(evt) {
+                    if(req.responseText) {
+                        eval(req.responseText);
+                        req.onreadystatechange = function (){}
+                        listenForBrowserEvents();
+                    }
+                }
+                req.send(null);
+            }
+            listenForBrowserEvents();
         }
     }
 

@@ -132,17 +132,6 @@ if (!("console" in window) || !("firebug" in console)) {
         
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
        
-        $: function(id)
-        {
-            return document.getElementById(id);
-        },
-
-        $$: function(selector)
-        {
-            // XXXjoe Make this into getElementsBySelector
-            return document.getElementsByTagName(selector);
-        },
-        
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
         
         onError: function(msg, href, lineNo)
@@ -174,32 +163,21 @@ if (!("console" in window) || !("firebug" in console)) {
                 }
             }
         },
-
-        handshake: function(callback)
-        {
-            sendMessage = callback;
-            
-            for (var i = 0; i < queue.length; ++i)
-                sendMessage(queue[i]);
-        }
     };
  
     // ********************************************************************************************
      
     var timeMap = {};
-    var queue = [];
-    
-    function init()
-    {
-        var iframe = document.createElement("iframe");
-        document.body.appendChild(iframe);
-        iframe.src = "http://" + ibugHost + "/phone";
-    }
     
     function sendMessage(message)
     {
-        // Until we get a handshake from the iframe, queue messages for delivery
-        queue.push(message);
+        var img = document.createElement("img");
+        img.style.visibility = "hidden";
+        img.onerror = function() { img.parentNode.removeChild(img); }
+
+        var message = escape(message);
+        img.src = "http://" + ibugHost + "/response?message=" + message;
+        document.body.appendChild(img);
     }
         
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -449,6 +427,5 @@ if (!("console" in window) || !("firebug" in console)) {
         }
     }
 
-    setTimeout(init, 0);
 })();
 }

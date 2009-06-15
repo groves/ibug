@@ -39,14 +39,9 @@ class WebRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             postPhoneResponse(query.get("message"))
 
         elif path == "/browser":
-            self.respond(200, "text/html")
-            self << getFormattedFile("browser.html")
-            self.wfile.flush()
-
-            while 1:
-                message = waitForPhoneResponse()
-                self << "<script>command('%s')</script>" % escapeJavaScript(message)
-                self.wfile.flush()
+            self.respond(200, "application/x-javascript")
+            message = waitForPhoneResponse()
+            self << "command('%s')" % escapeJavaScript(message)
 
         elif path == "/phone":
             self.respond(200, "text/html")
@@ -71,6 +66,11 @@ class WebRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self << "\n"
     
     def sendFile(self, path, mimeType=None, header=None):
+        if path == 'favicon.ico':
+            self.respond(404)
+            self << "Not found!"
+            return
+
         if not mimeType:
             mimeType = mimetypes.guess_type(path)[0]
             
@@ -80,10 +80,7 @@ class WebRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self << file(path).read()
         
     def __lshift__(self, text):
-        try:
             self.wfile.write(text)
-        except:
-            pass
         
 # **************************************************************************************************
 
@@ -184,7 +181,7 @@ def getHostInfo():
     import socket
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("getfirebug.com", 80))
-    hostName = s.getsockname()[0]
+    hostName = "localhost"
     s.close()
     
     return {"hostName": hostName, "port": webPort}
