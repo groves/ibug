@@ -4,7 +4,7 @@ if (!("console" in window) || !("firebug" in console)) {
 {
     function listenForCommands() {
         var script = document.createElement("script");
-        var url = "http://" + ibugHost + "/phone?" + new Date().getTime();
+        var url = ibugHost + "/phone?" + new Date().getTime();
         script.setAttribute("src", url);
         script.setAttribute("type", "text/javascript");
         document.body.appendChild(script);
@@ -184,7 +184,7 @@ if (!("console" in window) || !("firebug" in console)) {
         img.onerror = function() { img.parentNode.removeChild(img); }
 
         var message = escape(message);
-        img.src = "http://" + ibugHost + "/log?message=" + message;
+        img.src = ibugHost + "/log?message=" + message;
         document.body.appendChild(img);
     }
     window.onload = listenForCommands;

@@ -23,8 +23,8 @@
     var isSafari = navigator.userAgent.indexOf("AppleWebKit") != -1;
 
     var greeting = 'Paste this into the head of any HTML pages you want to debug on your iPhone:';
-    var codeToPaste = '<script type="application/x-javascript" src="http://'
-        + ibugHost + '/ibug.js"></script>';
+    var codeToPaste = '<script type="application/x-javascript" src="' + ibugHost +
+        '/ibug.js"></script>';
     
     // ********************************************************************************************
 
@@ -303,5 +303,4 @@
     }
 
     init();
-    
 })();
